@@ -20,6 +20,11 @@ class Api::V1::ArticlesController < Api::V1::BaseApiController
     render json: article, each_serializer: Api::V1::ArticleSerializer
   end
 
+  def destroy
+    article = current_user.articles.find(params[:id])
+    article.destroy!
+  end
+
   private
 
     def article_params
