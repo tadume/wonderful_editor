@@ -50,7 +50,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
     end
   end
 
-  describe "POST /articles/:id" do
+  describe "POST /api/v1/articles/:id" do
     subject { post(api_v1_articles_path, params: params) }
 
     let(:params) { { article: attributes_for(:article) } }
@@ -62,6 +62,31 @@ RSpec.describe "Api::V1::Articles", type: :request do
       res = JSON.parse(response.body)
       expect(res["title"]).to eq params[:article][:title]
       expect(res["body"]).to eq params[:article][:body]
+    end
+  end
+
+  describe "PATCH /api/v1/articles/:id" do
+    subject { patch(api_v1_article_path(article.id), params: params) }
+
+    let(:params) { { article: attributes_for(:article) } }
+    let(:current_user) { create(:user) }
+    before { allow_any_instance_of(Api::V1::BaseApiController).to receive(:current_user).and_return(current_user) }
+
+    context "自身の記事を更新する場合" do
+      let(:article) { create(:article, user: current_user) }
+      it "記事が更新される", :aggregate_failures do
+        expect { subject }.to change { article.reload.title }.from(article.title).to(params[:article][:title]) &
+                              change { article.reload.body }.from(article.body).to(params[:article][:body])
+        expect(response).to have_http_status(ok)
+      end
+    end
+
+    context "自身の記事以外を更新する場合" do
+      let(:article) { create(:article, user: other_user) }
+      let(:other_user) { create(:user) }
+      it "記事の更新に失敗する", :aggregate_failures do
+        expect { subject }.to raise_error(ActiveRecord::RecordNotFound)
+      end
     end
   end
 end
