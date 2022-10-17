@@ -77,7 +77,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
       it "記事が更新される", :aggregate_failures do
         expect { subject }.to change { article.reload.title }.from(article.title).to(params[:article][:title]) &
                               change { article.reload.body }.from(article.body).to(params[:article][:body])
-        expect(response).to have_http_status(200)
+        expect(response).to have_http_status(ok)
       end
     end
 
