@@ -24,7 +24,7 @@ RSpec.describe Article, type: :model do
   describe "正常系" do
     context "タイトルと内容が入力されている時" do
       let(:article) { create(:article) }
-      it "下書き状態の記事が作成される" do
+      it "下書き状態の記事が作成される", :aggregate_failures do
         expect(article).to be_valid
         expect(article.status).to eq "draft"
       end
@@ -32,7 +32,7 @@ RSpec.describe Article, type: :model do
 
     context "status が下書き状態の時" do
       let(:article) { create(:article, :draft) }
-      it "下書きの記事が作成できる" do
+      it "下書きの記事が作成できる", :aggregate_failures do
         expect(article).to be_valid
         expect(article.status).to eq "draft"
       end
@@ -40,7 +40,7 @@ RSpec.describe Article, type: :model do
 
     context "status が公開状態の時" do
       let(:article) { create(:article, :published) }
-      it "公開の記事が作成できる" do
+      it "公開の記事が作成できる", :aggregate_failures do
         expect(article).to be_valid
         expect(article.status).to eq "published"
       end
