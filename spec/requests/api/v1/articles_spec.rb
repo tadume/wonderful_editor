@@ -4,10 +4,10 @@ RSpec.describe "Api::V1::Articles", type: :request do
   describe "GET /index" do
     subject { get(api_v1_articles_path) }
 
-    let!(:article1) { create(:article, updated_at: 1.days.ago) }
-    let!(:article2) { create(:article, updated_at: 2.days.ago) }
-    let!(:article3) { create(:article) }
-    it "記事の一覧が取得できる", :aggregate_failures do
+    let!(:article1) { create(:article, :published, updated_at: 1.days.ago) }
+    let!(:article2) { create(:article, :published, updated_at: 2.days.ago) }
+    let!(:article3) { create(:article, :published) }
+    it "公開している記事の一覧が取得できる", :aggregate_failures do
       subject
       res = JSON.parse(response.body)
       # HTTPステータスコードが200である
@@ -16,7 +16,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
       expect(res.count).to eq 3
       # 返ってきた記事は、リクエスト通りか => それぞれのカラムを比較
       expect(res.map {|n| n["id"] }).to eq [article3.id, article1.id, article2.id]
-      expect(res[0].keys).to eq ["id", "title", "updated_at", "user"]
+      expect(res[0].keys).to eq ["id", "title", "updated_at", "status", "user"]
       # 関連するuserもリクエスト通りのカラムか
       expect(res[0]["user"].keys).to eq ["id", "name", "email"]
     end
@@ -25,10 +25,10 @@ RSpec.describe "Api::V1::Articles", type: :request do
   describe "GET /articles/:id" do
     subject { get(api_v1_article_path(article_id)) }
 
-    context "指定した id の article が存在する場合" do
+    context "指定した id の 公開article が存在する場合" do
       let(:article_id) { article.id }
-      let(:article) { create(:article) }
-      it "記事が取得できる", :aggregate_failures do
+      let(:article) { create(:article, :published) }
+      it "公開している記事が取得できる", :aggregate_failures do
         subject
         res = JSON.parse(response.body)
         # ステータスコードが200である
@@ -53,11 +53,11 @@ RSpec.describe "Api::V1::Articles", type: :request do
   describe "POST /api/v1/articles/:id" do
     subject { post(api_v1_articles_path, params: params, headers: headers) }
 
-    let(:params) { { article: attributes_for(:article) } }
+    let(:params) { { article: attributes_for(:article, :published) } }
     let(:current_user) { create(:user) }
     let(:headers) { current_user.create_new_auth_token }
 
-    it "記事のレコードが作成される", :aggregate_failures do
+    it "公開している記事のレコードが作成される", :aggregate_failures do
       expect { subject }.to change { Article.where(user_id: current_user.id).count }.by(1)
       res = JSON.parse(response.body)
       expect(res["title"]).to eq params[:article][:title]
@@ -72,7 +72,7 @@ RSpec.describe "Api::V1::Articles", type: :request do
     let(:current_user) { create(:user) }
     let(:headers) { current_user.create_new_auth_token }
 
-    context "自身の記事を更新する場合" do
+    context "自身の公開している記事を更新する場合" do
       let(:article) { create(:article, user: current_user) }
       it "記事が更新される", :aggregate_failures do
         expect { subject }.to change { article.reload.title }.from(article.title).to(params[:article][:title]) &
